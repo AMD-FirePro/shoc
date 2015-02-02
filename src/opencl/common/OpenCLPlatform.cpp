@@ -5,7 +5,9 @@
 #include <string>
 #include <iostream>
 #include <iomanip>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <assert.h>
 
 using namespace std;

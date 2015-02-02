@@ -416,6 +416,7 @@ if (! -d "$bindir/Serial")
 # Check if there are executables in the binary directory.
 # Note: this check is not exhaustive.
 if ( ! (( -f "$bindir/Serial/OpenCL/Sort" && -x "$bindir/Serial/OpenCL/Sort" ) ||
+        ( -f "$bindir/Serial/OpenCL/Sort.exe" && -x "$bindir/Serial/OpenCL/Sort.exe" ) ||
         ( -f "$bindir/Serial/CUDA/Sort" && -x "$bindir/Serial/CUDA/Sort" )) )
     
 {
@@ -446,7 +447,9 @@ else {
 
 # try to duplicate stdout to a log file
 open(SAVEOUT, ">&STDOUT");
-if (! open(STDOUT, "| tee -i Logs/shoc${deviceList}.log"))
+#if (! open(STDOUT, "| tee -i Logs/shoc${deviceList}.log"))
+use Config;
+if (! ($Config{osname} eq 'linux') )
 {
     open(STDOUT, ">&SAVEOUT");
     print "Warning: could not save screen output to log file.\n";
@@ -856,8 +859,14 @@ sub printDevInfo {
 
        # Save the compiler version and build flags in the Logs
        # Assumes SHOC has been successfully installed.
-       system("cp $bindir/../share/doc/shoc/buildFlags.txt Logs/buildFlags.txt");
-       system("cp $bindir/../share/doc/shoc/compilerVersion.txt Logs/compilerVersion.txt");
+#      system("cp $bindir/../share/doc/shoc/buildFlags.txt Logs/buildFlags.txt");
+#      system("cp $bindir/../share/doc/shoc/compilerVersion.txt Logs/compilerVersion.txt");
+       use File::Copy qw(copy);
+       use File::Basename;
+       copy "dirname($bindir)/share/doc/shoc/buildFlags.txt", "Logs/buildFlags.txt";
+       copy "dirname($bindir)/share/doc/shoc/compilerVersion.txt", "Logs/compilerVersion.txt";
+#      copy "$bindirDotDot/share/doc/shoc/compilerVersion.txt", "Logs/compilerVersion.txt";
+       $retval = 0;
 
        die "Error collecting device info.\n".
            "Make sure that you are running in the SHOC install root directory (or set -bindir)\n".

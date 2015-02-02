@@ -12,6 +12,14 @@
 #include "OptionParser.h"
 #include "ProgressBar.h"
 
+#ifdef _WIN32
+#define exp2(A) pow( 2, (A) )
+#define log2(A) log( (A) ) / log( 2 )
+#define lround(A) (long)floor( (A) + 0.5 )
+#define srand48(A) srand( (unsigned int)(A) )
+#define drand48() ((double)rand()/((double)RAND_MAX+1.0))
+#endif
+
 using namespace std;
 
 void TestImageMemory(cl_context ctx,
@@ -326,8 +334,9 @@ void RunBenchmark(cl_device_id dev,
        minGroupSize = 256;
     }
 
-    int memSize = 64*1024*1024;  // 64MB buffer
-    const long availMem = findAvailBytes(dev);
+    unsigned long memSize = 64*1024*1024;  // 64MB buffer
+    const unsigned long availMem = findAvailBytes(dev);
+//  unsigned long memSize = lround(exp2(floor(log2(availMem>>1))));
     while (memSize*2 > availMem)
        memSize >>= 1;   // keep it a power of 2
 
@@ -335,7 +344,17 @@ void RunBenchmark(cl_device_id dev,
     const int numWordsFloat = memSize / sizeof(float);
 
     size_t numWarps = numSMs * 16;  // use 8 times as many warps as the number of compute units
-    size_t globalWorkSize = numWarps * 32;  // each warp has 32 threads
+    // Set warp size to 64 on AMD devices
+    size_t globalWorkSize;
+    char vendorName[64];
+    clGetDeviceInfo(dev, CL_DEVICE_VENDOR, 64, vendorName, NULL);
+    if (strcmp(vendorName, "Advanced Micro Devices, Inc.") == 0)
+    {
+       globalWorkSize = numWarps * 64;  // each warp has 64 threads
+       minGroupSize = 64;
+    } else {
+       globalWorkSize = numWarps * 32;  // each warp has 32 threads
+    }
     int elemSize;
 
     // initialize host memory
@@ -797,7 +816,14 @@ void TestImageMemory(cl_context ctx,
     cl_sampler sampler;
     cl_device_type type;
     clGetDeviceInfo(device_id, CL_DEVICE_TYPE, sizeof(type), &type, NULL);
+#if defined(CL_VERSION_2_0)
+    cl_sampler_properties flags[] = {CL_SAMPLER_NORMALIZED_COORDS, CL_FALSE,
+                                     CL_SAMPLER_ADDRESSING_MODE, CL_ADDRESS_NONE,
+                                     CL_SAMPLER_FILTER_MODE, CL_FILTER_NEAREST, 0};
+    sampler = clCreateSamplerWithProperties (ctx, flags, &err);
+#else
     sampler = clCreateSampler (ctx, CL_FALSE, CL_ADDRESS_NONE, CL_FILTER_NEAREST, &err);
+#endif
     if (err != CL_SUCCESS)
     {
         cout << "Device does not support required sampler type, skipping test\n";

@@ -20,6 +20,7 @@ void RunBenchmark(cl_device_id id,
                   ResultDatabase &resultDB,
                   OptionParser &op);
 
+
 cl_device_id* _mpicontention_ocldev = NULL;
 cl_context* _mpicontention_ocldriver_ctx = NULL;
 cl_command_queue* _mpicontention_ocldriver_queue = NULL;
@@ -35,7 +36,7 @@ cl_command_queue* _mpicontention_ocldriver_queue = NULL;
 //   mympirank: for printing errors in case of failure
 //   mynoderank: this is typically the device ID (the mapping done in main)
 //
-// Returns:  success/failure
+// Returns: success/failure
 //
 // Creation: 2009
 //
@@ -72,27 +73,30 @@ int GPUSetup(OptionParser &op, int mympirank, int mynoderank)
     // Initialization
     cl_int clErr;
     _mpicontention_ocldev = new cl_device_id( ListDevicesAndGetDevice(platform, device) );
-
-    cl_context ctx = clCreateContext( NULL,
-                                1,                      // number of devices
-                                _mpicontention_ocldev,  // device
-                                NULL,                   // notification fcn
-                                NULL,                   // notification fcn data
-                                &clErr );
+    cl_context ctx = clCreateContext( NULL,     // properties
+                                        1,      // number of devices
+                                        _mpicontention_ocldev,  // device
+                                        NULL,   // notification function
+                                        NULL,   // notification function data
+                                        &clErr );
     CL_CHECK_ERROR(clErr);
     _mpicontention_ocldriver_ctx = new cl_context(ctx);
 
+#if defined(CL_VERSION_2_0)
+    cl_queue_properties flags[] = {CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE, 0};
+    cl_command_queue queue = clCreateCommandQueueWithProperties(ctx,
+#else
+    cl_command_queue_properties flags = CL_QUEUE_PROFILING_ENABLE;
     cl_command_queue queue = clCreateCommandQueue(ctx,
-                                                    *_mpicontention_ocldev,
-                                                    CL_QUEUE_PROFILING_ENABLE,
-                                                    &clErr);
+#endif
+                                                *_mpicontention_ocldev,
+                                                flags,
+                                                &clErr);
     CL_CHECK_ERROR(clErr);
     _mpicontention_ocldriver_queue = new cl_command_queue(queue);
 
     return 0;
 }
-
-
 
 // ****************************************************************************
 // Function: GPUCleanup
@@ -101,7 +105,6 @@ int GPUSetup(OptionParser &op, int mympirank, int mynoderank)
 //  do the necessary OpenCL cleanup for GPU part of the test
 //
 // Arguments:
-//  op: option parser (to be removed)
 //
 // Returns: success/failure
 //
@@ -113,14 +116,12 @@ int GPUSetup(OptionParser &op, int mympirank, int mynoderank)
 //
 int GPUCleanup(OptionParser &op)
 {
-    // Cleanup
     if( _mpicontention_ocldriver_queue != NULL )
     {
         clReleaseCommandQueue( *_mpicontention_ocldriver_queue );
         delete _mpicontention_ocldriver_queue;
         _mpicontention_ocldriver_queue = NULL;
     }
-
     if( _mpicontention_ocldriver_ctx != NULL )
     {
         clReleaseContext( *_mpicontention_ocldriver_ctx );

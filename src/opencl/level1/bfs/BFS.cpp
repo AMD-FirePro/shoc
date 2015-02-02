@@ -4,7 +4,9 @@
 #include<math.h>
 #include<set>
 #include<string.h>
+#ifndef _WIN32
 #include<sys/time.h>
+#endif
 #include<time.h>
 
 #include "Event.h"
@@ -313,6 +315,13 @@ void RunTest1(cl_device_id device, cl_context context, cl_command_queue queue,
     //configurable parameters for processing nodes
     cl_int W_SZ=32;
     cl_int CHUNK_SZ=32;
+    char vendorName[64];
+    clGetDeviceInfo(device, CL_DEVICE_VENDOR, 64, vendorName, NULL);
+    if (strcmp(vendorName, "Advanced Micro Devices, Inc.") == 0)
+    {
+       W_SZ=64;
+       CHUNK_SZ=64;
+    }
 
     //index for kernel parameters
     int p=-1;

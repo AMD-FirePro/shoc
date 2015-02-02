@@ -6,7 +6,11 @@
 #include <list>
 #include <map>
 #include <stdlib.h>
+#ifdef _WIN32
+#include <Winsock2.h>
+#else
 #include <unistd.h>
+#endif
 #include "SerializableObject.h"
 
 using namespace std;

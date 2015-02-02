@@ -83,9 +83,15 @@ int GPUSetup(OptionParser &op, int mympirank, int mynoderank)
     CL_CHECK_ERROR(clErr);
     _mpicontention_ocldriver_ctx = new cl_context(ctx);
 
+#if defined(CL_VERSION_2_0)
+    cl_queue_properties flags[] = {CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE, 0};
+    cl_command_queue queue = clCreateCommandQueueWithProperties(ctx,
+#else
+    cl_command_queue_properties flags = CL_QUEUE_PROFILING_ENABLE;
     cl_command_queue queue = clCreateCommandQueue(ctx,
+#endif
                                                 *_mpicontention_ocldev,
-                                                CL_QUEUE_PROFILING_ENABLE,
+                                                flags,
                                                 &clErr);
     CL_CHECK_ERROR(clErr);
     _mpicontention_ocldriver_queue = new cl_command_queue(queue);

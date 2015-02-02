@@ -8,6 +8,10 @@
 #include "ResultDatabase.h"
 #include "PMSMemMgmt.h"
 
+#ifdef _WIN32
+#define srand48(A) srand( (A) )
+#define drand48() ((double)rand()/RAND_MAX)
+#endif
 
 // Constants
 

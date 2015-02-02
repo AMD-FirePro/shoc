@@ -202,10 +202,16 @@ int main(int argc, char *argv[])
                                             NULL,
                                             &clErr );
         CL_CHECK_ERROR(clErr);
-        cl_command_queue queue = clCreateCommandQueue( ctx,
-                                                        devID,
-                                                        CL_QUEUE_PROFILING_ENABLE,
-                                                        &clErr );
+#if defined(CL_VERSION_2_0)
+        cl_queue_properties flags[] = {CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE, 0};
+        cl_command_queue queue = clCreateCommandQueueWithProperties(ctx,
+#else
+        cl_command_queue_properties flags = CL_QUEUE_PROFILING_ENABLE;
+        cl_command_queue queue = clCreateCommandQueue(ctx,
+#endif
+                                                      devID,
+                                                      flags,
+                                                      &clErr );
         CL_CHECK_ERROR(clErr);
         ResultDatabase resultDB;
 

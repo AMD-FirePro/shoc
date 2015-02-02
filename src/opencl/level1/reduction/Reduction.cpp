@@ -38,6 +38,49 @@ void runTest(const string& testName, cl_device_id dev, cl_context ctx,
 //
 // ****************************************************************************
 template <class T>
+bool checkResultsSingle(T devSum, T* idata, const int size)
+{
+    T refSum = 0.0f;
+    for (int i = 0; i < size; i++)
+    {
+        refSum += idata[i];
+    }
+
+    double threshold = 1.0e-8;
+    T diff = fabs(devSum - refSum);
+
+    cout << "TEST ";
+    if (diff < threshold)
+    {
+        cout << "PASSED\n";
+        return true;
+    }
+    else
+    {
+        cout << "FAILED\nDiff: " << diff << "\n";
+        return false;
+    }
+}
+
+// ****************************************************************************
+// Function: reduceCPU
+//
+// Purpose:
+//   Simple cpu reduce routine to verify device results
+//
+// Arguments:
+//   data : the input data
+//   size : size of the input data
+//
+// Returns:  sum of the data
+//
+// Programmer: Kyle Spafford
+// Creation: August 13, 2009
+//
+// Modifications:
+//
+// ****************************************************************************
+template <class T>
 bool checkResults(T* devResult, T* idata, const int numBlocks, const int size)
 {
     T devSum = 0.0;
@@ -177,8 +220,8 @@ void runTest(const string& testName, cl_device_id dev, cl_context ctx,
     err = clBuildProgram(prog, 1, &dev, compileFlags.c_str(), NULL, NULL);
     CL_CHECK_ERROR(err);
 
-    if (err != 0)
-    {
+    // If compilation fails, print error messages and return
+    if (err != CL_SUCCESS) {
         char log[5000];
         size_t retsize = 0;
         err =  clGetProgramBuildInfo(prog, dev, CL_PROGRAM_BUILD_LOG,
@@ -188,7 +231,7 @@ void runTest(const string& testName, cl_device_id dev, cl_context ctx,
         cout << "Build error." << endl;
         cout << "Retsize: " << retsize << endl;
         cout << "Log: " << log << endl;
-        return;
+        exit(-1);
     }
 
     // Extract out the kernels
@@ -350,15 +393,15 @@ void runTest(const string& testName, cl_device_id dev, cl_context ctx,
 
     err = clEnqueueUnmapMemObject(queue, h_i, h_idata, 0, NULL, NULL);
     CL_CHECK_ERROR(err);
-    err = clEnqueueUnmapMemObject(queue, h_o, h_odata, 0, NULL, NULL);
-    CL_CHECK_ERROR(err);
     err = clReleaseMemObject(h_i);
-    CL_CHECK_ERROR(err);
-    err = clReleaseMemObject(h_o);
     CL_CHECK_ERROR(err);
     err = clReleaseMemObject(d_idata);
     CL_CHECK_ERROR(err);
     err = clReleaseMemObject(d_odata);
+    CL_CHECK_ERROR(err);
+    err = clEnqueueUnmapMemObject(queue, h_o, h_odata, 0, NULL, NULL);
+    CL_CHECK_ERROR(err);
+    err = clReleaseMemObject(h_o);
     CL_CHECK_ERROR(err);
     err = clReleaseProgram(prog);
     CL_CHECK_ERROR(err);

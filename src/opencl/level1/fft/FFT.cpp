@@ -3,7 +3,9 @@
 #include <sstream>
 #include <math.h>
 #include <stdlib.h>
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include <time.h>
 #include "support.h"
 #include "ResultDatabase.h"
@@ -12,6 +14,10 @@
 #include "Timer.h"
 
 #include "fftlib.h"
+
+#ifdef _WIN32
+#define log2(A) log( (A) ) / log( 2 )
+#endif
 
 using namespace std;
 

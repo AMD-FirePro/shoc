@@ -14,6 +14,10 @@
 #include "ResultDatabase.h"
 #include "support.h"
 
+#ifdef _WIN32
+#define random() rand()
+#define srandom(A) srand((unsigned)(A))
+#endif
 using namespace std;
 
 // leftrotate function definition
@@ -409,30 +413,30 @@ double FindKeyWithDigest_GPU(cl_context ctx,
     // allocate output buffers
     //
     cl_mem d_foundIndex = clCreateBuffer(ctx, CL_MEM_READ_WRITE,
-                                         sizeof(int)*1, NULL, &err);
+                                         sizeof(*foundIndex), NULL, &err);
     CL_CHECK_ERROR(err);
 
     cl_mem d_foundKey = clCreateBuffer(ctx, CL_MEM_READ_WRITE,
-                                       8, NULL, &err);
+                                       8*sizeof(*foundKey), NULL, &err);
     CL_CHECK_ERROR(err);
 
     cl_mem d_foundDigest = clCreateBuffer(ctx, CL_MEM_READ_WRITE,
-                                          sizeof(unsigned int)*4, NULL, &err);
+                                          4*sizeof(*foundDigest), NULL, &err);
     CL_CHECK_ERROR(err);
 
     //
     // initialize output buffers to show no found result
     //
     err = clEnqueueWriteBuffer(queue, d_foundIndex, true, 0,
-                               sizeof(int)*1, foundIndex,
+                               sizeof(*foundIndex), foundIndex,
                                0, NULL, NULL);
     CL_CHECK_ERROR(err);
     err = clEnqueueWriteBuffer(queue, d_foundKey, true, 0,
-                               8, foundKey,
+                               8*sizeof(*foundKey), foundKey,
                                0, NULL, NULL);
     CL_CHECK_ERROR(err);
     err = clEnqueueWriteBuffer(queue, d_foundDigest, true, 0,
-                               sizeof(int)*4, foundDigest,
+                               4*sizeof(*foundDigest), foundDigest,
                                0, NULL, NULL);
     CL_CHECK_ERROR(err);
 
@@ -497,15 +501,15 @@ double FindKeyWithDigest_GPU(cl_context ctx,
     // read the (presumably) found key
     //
     err = clEnqueueReadBuffer(queue, d_foundIndex, true, 0,
-                              sizeof(int)*1, foundIndex,
+                              sizeof(*foundIndex), foundIndex,
                               0, NULL, NULL);
     CL_CHECK_ERROR(err);
     err = clEnqueueReadBuffer(queue, d_foundKey, true, 0,
-                              8, foundKey,
+                              8*sizeof(*foundKey), foundKey,
                               0, NULL, NULL);
     CL_CHECK_ERROR(err);
     err = clEnqueueReadBuffer(queue, d_foundDigest, true, 0,
-                              sizeof(int)*4, foundDigest,
+                              4*sizeof(*foundDigest), foundDigest,
                               0, NULL, NULL);
     CL_CHECK_ERROR(err);
 
@@ -635,7 +639,7 @@ RunBenchmark(cl_device_id dev,
 
     for (int pass = 0 ; pass < passes ; ++pass)
     {
-        int randomIndex = random() % keyspace;;
+        int randomIndex = random() % keyspace;
         unsigned char randomKey[8] = {0,0,0,0, 0,0,0,0};
         unsigned int randomDigest[4];
         IndexToKey(randomIndex, byteLength, valsPerByte, randomKey);

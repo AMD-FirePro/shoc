@@ -6,6 +6,10 @@
 #include "ResultDatabase.h"
 #include "OptionParser.h"
 
+#ifdef _WIN32
+#define srand48(A) srand( (unsigned int)(A) )
+#define drand48() ((double)rand()/((double)RAND_MAX+1.0))
+#endif
 using namespace std;
 
 // ****************************************************************************

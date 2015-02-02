@@ -10,6 +10,12 @@
 #include "OptionParser.h"
 #include "ProgressBar.h"
 
+#ifdef _WIN32
+#define srand48(A) srand( (unsigned int)(A) )
+#define drand48() ((double)rand()/((double)RAND_MAX+1.0))
+#define round(A) (double)floor( (A) + 0.5 )
+#endif
+
 using namespace std;
 
 // OpenCL kernels are auto-generated based on the fields of this structure.

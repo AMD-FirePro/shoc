@@ -786,8 +786,14 @@ void RunTest(cl_device_id dev, cl_context ctx, cl_command_queue queue,
 
     // Make sure our sampler type is supported
     cl_sampler sampler;
-    sampler = clCreateSampler(ctx, CL_FALSE, CL_ADDRESS_NONE,
-            CL_FILTER_NEAREST, &err);
+#if defined(CL_VERSION_2_0)
+    cl_sampler_properties flags[] = {CL_SAMPLER_NORMALIZED_COORDS, CL_FALSE,
+                                     CL_SAMPLER_ADDRESSING_MODE, CL_ADDRESS_NONE,
+                                     CL_SAMPLER_FILTER_MODE, CL_FILTER_NEAREST, 0};
+    sampler = clCreateSamplerWithProperties(ctx, flags, &err);
+#else
+    sampler = clCreateSampler(ctx, CL_FALSE, CL_ADDRESS_NONE, CL_FILTER_NEAREST, &err);
+#endif
     if (err != CL_SUCCESS)
     {
         cout << "Warning: Device does not support required sampler type";
